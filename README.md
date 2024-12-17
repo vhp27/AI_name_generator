@@ -29,7 +29,8 @@ GETnames is a modern, AI-powered name generator that helps you create unique and
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/name-generator.git
+git clone 
+https://github.com/vhp27/AI_name_generator.git
 cd name-generator
 ```
 
