@@ -3,5 +3,12 @@ Allow: /
 Disallow: /api/
 Disallow: /admin/
 
-# Sitemap
+# Primary domain sitemap
 Sitemap: https://getnames.online/sitemap.xml
+
+# Cloudflare Pages domain
+Host: getnames.online
+Host-priority: 1.0
+
+Host: getnames.pages.dev
+Host-priority: 0.7

@@ -1,12 +1,27 @@
 import { AppSettings } from '../types';
 
+// Optional debug import that won't break if file is missing
+let debugApi: any;
+try {
+  debugApi = require('../utils/debugApi').debugApi;
+} catch {
+  debugApi = {
+    logRequest: () => {},
+    logResponse: () => {},
+    logModelAttempt: () => {},
+    logModelSwitch: () => {},
+  };
+}
+
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
 const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 const MODELS = {
-  PRIMARY: "meta-llama/llama-3.2-1b-instruct:free",
+  PRIMARY: "google/gemini-flash-1.5-exp",
+  PRIMARY2: "meta-llama/llama-3.2-1b-instruct:free",
   FALLBACK: "meta-llama/llama-3.1-70b-instruct:free",
-  BACKUP: "meta-llama/llama-3.2-3b-instruct:free"
+  BACKUP: "meta-llama/llama-3.2-3b-instruct:free",
+  BACKUP2: "google/gemini-flash-1.5-8b-exp"
 };
 
 const MAX_RETRIES = 2;
@@ -72,19 +87,21 @@ const createPromptContent = (settings: AppSettings): string => {
 };
 
 export const generateNames = async (settings: AppSettings): Promise<string[]> => {
-  const { numNames = 25, temperature = 0.7 } = settings;
+  const { numNames, temperature = 0.7 } = settings;
   const prompt = createPromptContent(settings);
 
   if (!OPENROUTER_API_KEY) {
     throw new Error(ERROR_MESSAGES.API_KEY);
   }
 
-  const models = [MODELS.PRIMARY, MODELS.FALLBACK, MODELS.BACKUP];
+  const models = [MODELS.PRIMARY, MODELS.FALLBACK, MODELS.BACKUP, MODELS.BACKUP2];
   let lastError = null;
 
   for (const model of models) {
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       try {
+        debugApi.logModelAttempt(model, attempt);
+
         const requestBody = {
           model: model,
           messages: [
@@ -100,6 +117,8 @@ export const generateNames = async (settings: AppSettings): Promise<string[]> =>
           temperature: temperature,
           max_tokens: 1000,
         };
+
+        debugApi.logRequest(model, requestBody);
 
         const headers = {
           'Content-Type': 'application/json',
@@ -125,6 +144,8 @@ export const generateNames = async (settings: AppSettings): Promise<string[]> =>
         }
 
         const data = await response.json();
+        debugApi.logResponse(model, data);
+
         const content = data.choices[0]?.message?.content || '';
         const names = content.split(',')
           .map((name: string) => name.trim())
@@ -137,6 +158,7 @@ export const generateNames = async (settings: AppSettings): Promise<string[]> =>
 
         return names;
       } catch (error) {
+        debugApi.logResponse(model, null, error);
         lastError = error;
 
         // If it's not the last retry and not the last model, wait before retrying
@@ -146,6 +168,9 @@ export const generateNames = async (settings: AppSettings): Promise<string[]> =>
         }
         
         // If it's the last retry for this model, try the next model
+        if (model !== models[models.length - 1]) {
+          debugApi.logModelSwitch(model, models[models.indexOf(model) + 1], error instanceof Error ? error.message : 'Unknown error');
+        }
         break;
       }
     }

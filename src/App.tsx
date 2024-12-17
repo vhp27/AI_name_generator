@@ -9,6 +9,7 @@ import { useTheme } from './context/ThemeContext';
 import { theme } from './styles/theme';
 import { MobileNav } from './components/MobileNav';
 import { Donation } from './components/Donation';
+import { Toast, ToastManager } from './components/Toast';
 
 function App() {
   const { theme: currentTheme, setTheme } = useTheme();
@@ -17,11 +18,28 @@ function App() {
     theme: currentTheme
   }));
   const themeStyles = theme[currentTheme];
+  const [toasts, setToasts] = useState<Array<{ id: number; message: string; type: 'success' | 'error' | 'info' }>>([]);
 
   useEffect(() => {
     // Keep settings in sync with theme changes
     setSettings(prev => ({ ...prev, theme: currentTheme }));
   }, [currentTheme]);
+
+  useEffect(() => {
+    const handleToast = (toast: { id: number; message: string; type: 'success' | 'error' | 'info' }) => {
+      setToasts(prev => {
+        // Check if toast with same message already exists
+        const exists = prev.some(t => t.message === toast.message);
+        if (exists) return prev;
+        return [...prev, toast];
+      });
+    };
+
+    ToastManager.subscribe(handleToast);
+    return () => {
+      ToastManager.unsubscribe(handleToast);
+    };
+  }, []);
 
   const handleSettingsChange = (newSettings: AppSettings) => {
     setSettings(newSettings);
@@ -29,6 +47,10 @@ function App() {
   };
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleRemoveToast = (id: number) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  };
 
   return (
     <Router>
@@ -97,7 +119,7 @@ function App() {
           </div>
         </nav>
 
-        <main className="max-w-7xl mx-auto px-6 pt-24 pb-12">
+        <main className="max-w-7xl mx-auto px-6 pt-24 pb-32 sm:pb-24">
           <div className="pt-16 lg:pt-20">
             <Routes>
               <Route 
@@ -138,6 +160,18 @@ function App() {
 
         {/* Donation Component */}
         <Donation />
+
+        {/* Toast Container */}
+        <div className="fixed top-0 right-0 z-50">
+          {toasts.map((toast) => (
+            <Toast
+              key={`toast-${toast.id}`}
+              message={toast.message}
+              type={toast.type}
+              onClose={() => handleRemoveToast(toast.id)}
+            />
+          ))}
+        </div>
 
         {/* Hidden SEO footer */}
         <footer className="sr-only">

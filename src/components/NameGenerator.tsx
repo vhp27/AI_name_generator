@@ -88,10 +88,9 @@ export const NameGenerator: React.FC<Props> = ({ settings, onNamesGenerated }) =
     setIsLoadingMore(true);
     try {
       const nextPage = currentPage + 1;
-      const startIndex = visibleNames.length;
-      const endIndex = Math.min(nextPage * settings.namesPerPage, allNames.length);
+      const endIndex = nextPage * settings.namesPerPage;
       
-      if (startIndex >= endIndex) {
+      if (endIndex > allNames.length) {
         ToastManager.show({ message: 'No more names to load', type: 'info' });
         return;
       }
@@ -237,7 +236,7 @@ export const NameGenerator: React.FC<Props> = ({ settings, onNamesGenerated }) =
           <div className="space-y-2">
             {visibleNames.map((name, index) => (
               <div
-                key={index}
+                key={`generated-${index}-${name}`}
                 className={`flex items-center justify-between p-3 ${t.paper} ${c.rounded} border ${t.border} ${t.listItem.hover}`}
               >
                 <div className="flex items-center gap-3">
@@ -283,7 +282,7 @@ export const NameGenerator: React.FC<Props> = ({ settings, onNamesGenerated }) =
           <div className="space-y-4">
             {history.map((item, index) => (
               <div
-                key={index}
+                key={`history-${index}-${item.prompt}`}
                 className={`border ${t.border} ${c.rounded} overflow-hidden`}
               >
                 <div 
@@ -316,7 +315,7 @@ export const NameGenerator: React.FC<Props> = ({ settings, onNamesGenerated }) =
                   <div className="p-4 space-y-2">
                     {item.names.map((name, nameIndex) => (
                       <div
-                        key={nameIndex}
+                        key={`history-item-${index}-${nameIndex}-${name}`}
                         className={`flex items-center justify-between p-3 ${t.paper} ${c.rounded} border ${t.border}`}
                       >
                         <span className={t.text.primary}>{name}</span>
@@ -351,7 +350,7 @@ export const NameGenerator: React.FC<Props> = ({ settings, onNamesGenerated }) =
           <div className="space-y-2">
             {favorites.map((name, index) => (
               <div
-                key={index}
+                key={`favorite-${index}-${name}`}
                 className={`flex items-center justify-between p-3 ${t.paper} ${c.rounded} border ${t.border}`}
               >
                 <span className={t.text.primary}>{name}</span>

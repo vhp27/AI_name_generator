@@ -75,18 +75,18 @@ type ToastCallback = (toast: ToastMessage) => void;
 
 class ToastManagerClass {
   private subscribers: ToastCallback[] = [];
-  private counter = 0;
 
   subscribe(callback: ToastCallback) {
     this.subscribers.push(callback);
-    return () => {
-      this.subscribers = this.subscribers.filter(cb => cb !== callback);
-    };
+  }
+
+  unsubscribe(callback: ToastCallback) {
+    this.subscribers = this.subscribers.filter(cb => cb !== callback);
   }
 
   show(options: ToastOptions) {
     const toast: ToastMessage = {
-      id: ++this.counter,
+      id: Date.now() + Math.random(),
       message: options.message,
       type: options.type || 'info',
       duration: options.duration || 3000
